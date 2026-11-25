@@ -17,6 +17,10 @@ https://nawodtharuka2003-source.github.io/farmers-buyers-matching-system/
 
 Recommendations are for decision support. Confirm produce quality, availability, prices, and delivery terms with participants.
 
+## Matching and shortest paths
+
+The matching engine uses **Dijkstra's algorithm** to find the shortest approximate road distance between locations in its weighted Sri Lanka region graph. This distance helps determine whether a farmer is reachable and contributes to the match score. The ranking weights distance at 45%, price fit at 35%, and supply coverage at 20%. The graph distances are illustrative approximations, not verified live road distances.
+
 ## Technology
 
 - HTML, CSS, and JavaScript modules
