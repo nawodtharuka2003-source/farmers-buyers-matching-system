@@ -651,6 +651,7 @@ td { padding: 16px 15px; font-size: 13px; color: #40544a; }
     .topbar-actions { gap: 6px; }
     .notification-button, .theme-toggle, .sign-out-button { min-height: 30px; padding: 0 6px; font-size: 9px; }
     .theme-toggle { min-width: 0; }
+    .status-pill { display: none; }
     .breadcrumb { font-size: 10px; }
     .breadcrumb span { margin: 0 4px; }
     .topbar { padding-right: 8px; padding-left: 8px; }
