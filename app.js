@@ -78,6 +78,7 @@ import {
     };
     const LEGACY_STORAGE_KEY = 'agrilink-demo-v1';
     const LOCAL_CACHE_KEY = 'croplink-firestore-cache-v1';
+    const THEME_STORAGE_KEY = 'croplink-theme';
 
     let data = getSignedOutData();
     let currentUser = null;
@@ -558,6 +559,7 @@ import {
                     }
                 }
             });
+            updateHarvestChartTheme();
         } else if (canvas) {
             canvas.insertAdjacentHTML('afterend', '<p class="muted">Chart.js could not load. Check your internet connection.</p>');
         }
@@ -761,7 +763,7 @@ import {
             const townLegs = legs.map(({ from, to, distance }) => {
                 const fromName = locationLabels[from] || routeTownLabels[from] || from;
                 const toName = locationLabels[to] || routeTownLabels[to] || to;
-                return `<li><span>${escapeHtml(fromName)} → ${escapeHtml(toName)}</span><strong>${formatNumber(distance)} km</strong></li>`;
+                return `<li><span>${escapeHtml(fromName)} to ${escapeHtml(toName)}</span><strong>${formatNumber(distance)} km</strong></li>`;
             }).join('');
             const roadSegments = getOnlineRoadSegments(routeData.steps).map(segment =>
                 `<li><span>${escapeHtml(segment.name)}</span><strong>${formatNumber(segment.distance)} km</strong></li>`
@@ -774,11 +776,11 @@ import {
                 : '';
             routeLegs.innerHTML = `<ol class="route-itinerary-list">${townLegs}</ol>
                 ${roadSegmentDetails}
-                <p class="route-itinerary-total">Route distance: <strong>${formatNumber(routeData.distanceKm)} km</strong> · Shortest of the alternatives returned by the online driving router; it may not be the absolute minimum-distance route.</p>${distanceNote}`;
+                <p class="route-itinerary-total">Route distance: <strong>${formatNumber(routeData.distanceKm)} km</strong>. This is the shortest option returned by the online router, but may not be the shortest possible route.</p>${distanceNote}`;
         }
         const routeMapStatus = byId('routeMapStatus');
         if (routeMapStatus) {
-            routeMapStatus.textContent = `${getLocationName(match.farmer.location)} → ${getLocationName(match.buyer.location)} · ${formatNumber(routeData.distanceKm)} km · OSM road route`;
+            routeMapStatus.textContent = `Route from ${getLocationName(match.farmer.location)} to ${getLocationName(match.buyer.location)}, ${formatNumber(routeData.distanceKm)} km, via OpenStreetMap`;
         }
     }
 
@@ -799,7 +801,7 @@ import {
         const optionValue = match => routeKey(match.farmer.id, match.buyer.id);
         if (select) {
             select.innerHTML = '<option value="">Select a match</option>' + visibleMatches.map(match =>
-                `<option value="${escapeHtml(optionValue(match))}">${escapeHtml(match.farmer.name)} → ${escapeHtml(match.buyer.name)} (${Math.round(match.distance)} km)</option>`
+                `<option value="${escapeHtml(optionValue(match))}">${escapeHtml(match.farmer.name)} to ${escapeHtml(match.buyer.name)} (${Math.round(match.distance)} km)</option>`
             ).join('');
             if (visibleMatches.some(match => optionValue(match) === selectedValue)) select.value = selectedValue;
             else if (visibleMatches[0]) select.value = optionValue(visibleMatches[0]);
@@ -825,15 +827,15 @@ import {
         const selectedRoute = onlineRouteCache.get(routeKey(match.farmer.location, match.buyer.location));
         if (selectedRoute) drawOnlineRoute(match, selectedRoute);
         else {
-            if (routeMapStatus) routeMapStatus.textContent = `${getLocationName(match.farmer.location)} → ${getLocationName(match.buyer.location)} · Loading online road route…`;
-            if (routeLegs) routeLegs.textContent = 'Loading road geometry and route details from OpenStreetMap routing…';
+            if (routeMapStatus) routeMapStatus.textContent = `Loading the road route from ${getLocationName(match.farmer.location)} to ${getLocationName(match.buyer.location)}...`;
+            if (routeLegs) routeLegs.textContent = 'Loading road details from OpenStreetMap...';
             getOnlineDrivingRoute(match.farmer.location, match.buyer.location).then(() => {
                 if (requestId === activeRouteRender) render();
             }).catch(error => {
                 if (requestId !== activeRouteRender) return;
                 console.error('OpenStreetMap route lookup failed:', error);
-                if (routeMapStatus) routeMapStatus.textContent = `Unable to load online route: ${error.message}`;
-                if (routeLegs) routeLegs.textContent = `The online road route could not be loaded: ${error.message}`;
+                if (routeMapStatus) routeMapStatus.textContent = `We could not load the road route: ${error.message}`;
+                if (routeLegs) routeLegs.textContent = `The road route could not be loaded: ${error.message}`;
             });
         }
         const matchedQuantity = Math.min(Number(match.farmer.quantity), Number(match.buyer.quantity));
@@ -1134,13 +1136,64 @@ import {
         });
     }
 
+    function getEffectiveTheme() {
+        return document.documentElement.dataset.theme
+            || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    }
+
+    function updateHarvestChartTheme() {
+        if (!harvestChart) return;
+        const dark = getEffectiveTheme() === 'dark';
+        const tickColor = dark ? '#b5c3bb' : '#98a69e';
+        harvestChart.options.scales.x.ticks.color = tickColor;
+        harvestChart.options.scales.y.ticks.color = tickColor;
+        harvestChart.options.scales.y.grid.color = dark ? '#34443c' : '#eff3f0';
+        harvestChart.update('none');
+    }
+
+    function setupThemeToggle() {
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+        const updateButtons = () => {
+            const dark = getEffectiveTheme() === 'dark';
+            document.querySelectorAll('.theme-toggle').forEach(button => {
+                button.textContent = dark ? 'Light mode' : 'Dark mode';
+                button.setAttribute('aria-label', `Switch to ${dark ? 'light' : 'dark'} mode`);
+                button.setAttribute('aria-pressed', String(dark));
+            });
+        };
+
+        document.querySelectorAll('.topbar-actions').forEach(actions => {
+            const button = document.createElement('button');
+            button.className = 'theme-toggle';
+            button.type = 'button';
+            button.addEventListener('click', () => {
+                const nextTheme = getEffectiveTheme() === 'dark' ? 'light' : 'dark';
+                document.documentElement.dataset.theme = nextTheme;
+                localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+                updateButtons();
+                updateHarvestChartTheme();
+            });
+            actions.append(button);
+        });
+
+        updateButtons();
+        systemTheme.addEventListener('change', event => {
+            const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+            if (savedTheme !== 'light' && savedTheme !== 'dark') {
+                document.documentElement.dataset.theme = event.matches ? 'dark' : 'light';
+                updateButtons();
+                updateHarvestChartTheme();
+            }
+        });
+    }
+
     function setupAuthUI() {
         const authGate = document.createElement('section');
         authGate.id = 'authGate';
         authGate.className = 'auth-gate';
         authGate.innerHTML = `
             <form id="authForm" class="auth-card">
-                <button type="button" class="auth-close" aria-label="Close sign-in">×</button>
+                <button type="button" class="auth-close" aria-label="Close sign-in">Close</button>
                 <span class="brand-mark auth-logo">C</span>
                 <p class="eyebrow">CROPLINK WORKSPACE</p>
                 <h1 id="authTitle">Sign in to your workspace</h1>
@@ -1252,7 +1305,7 @@ import {
                 menu = document.createElement('div');
                 menu.className = 'profile-menu';
                 menu.innerHTML = `
-                    <strong>Switch login</strong>
+                    <strong>Change role</strong>
                     <small class="profile-menu-role">${localStorage.getItem('croplink-login-role') || 'Coordinator'}</small>
                     <button type="button" class="profile-role-switch" data-role="Coordinator">Coordinator</button>
                     <button type="button" class="profile-role-switch" data-role="Farmer">Farmer</button>
@@ -1392,6 +1445,7 @@ import {
     setupAuthUI();
     setupProfileMenu();
     setupNotificationMenu();
+    setupThemeToggle();
     setupSupportAgent();
     render();
     startAuthListener();
@@ -1413,10 +1467,10 @@ import {
 
     function setupNotificationMenu() {
         document.querySelectorAll('.topbar-actions').forEach(actions => {
-            const button = actions.querySelector('.icon-button');
+            const button = actions.querySelector('.notification-button');
             if (!button) return;
 
-            button.innerHTML = '♧';
+            button.setAttribute('aria-label', 'Notifications');
             button.setAttribute('aria-haspopup', 'menu');
 
             let menu = actions.querySelector('.notification-menu');
@@ -1426,7 +1480,7 @@ import {
                 menu.setAttribute('role', 'menu');
                 menu.innerHTML = `
                     <div class="notification-heading"><strong>Notifications</strong><span id="notificationCount">0</span></div>
-                    <div class="notification-item"><span>♧</span><div><strong>Network status</strong><small>No new activity</small></div></div>`;
+                    <div class="notification-item"><div><strong>Network status</strong><small>No new activity</small></div></div>`;
                 actions.append(menu);
             }
 
@@ -1451,7 +1505,7 @@ import {
         document.addEventListener('click', event => {
             if (!event.target.closest('.topbar-actions')) {
                 document.querySelectorAll('.notification-menu.open').forEach(menu => menu.classList.remove('open'));
-                document.querySelectorAll('.icon-button').forEach(button => button.setAttribute('aria-expanded', 'false'));
+                document.querySelectorAll('.notification-button').forEach(button => button.setAttribute('aria-expanded', 'false'));
             }
         });
     }
@@ -1470,10 +1524,10 @@ function setupSupportAgent() {
     panel.className = 'support-agent';
     panel.setAttribute('aria-label', 'CropLink support assistant');
     panel.innerHTML = `
-        <header class="support-agent-header"><div><span class="support-agent-status"></span><strong>CropLink Assistant</strong><small>AI support</small></div><button type="button" class="support-agent-close" aria-label="Close assistant">×</button></header>
-        <div class="support-agent-messages" aria-live="polite"><div class="support-message agent"><span>Hello! Ask me about farmers, buyers, matching, allocations, or sign-in.</span></div></div>
+        <header class="support-agent-header"><div><span class="support-agent-status"></span><strong>CropLink Assistant</strong><small>Here to help</small></div><button type="button" class="support-agent-close" aria-label="Close assistant">Close</button></header>
+        <div class="support-agent-messages" aria-live="polite"><div class="support-message agent"><span>Hi! I can help you use CropLink. What would you like to know?</span></div></div>
         <div class="support-suggestions"><button type="button">How do I add a farmer?</button><button type="button">How are matches calculated?</button></div>
-        <form class="support-agent-form"><input name="message" type="text" autocomplete="off" placeholder="Ask a question…" aria-label="Ask a question" required><button type="submit" aria-label="Send message">➤</button></form>`;
+        <form class="support-agent-form"><input name="message" type="text" autocomplete="off" placeholder="Ask a question..." aria-label="Ask a question" required><button type="submit" aria-label="Send message">Send</button></form>`;
     document.body.append(panel);
     const launcher = document.createElement('button');
     launcher.className = 'support-agent-launcher';
@@ -1524,7 +1578,7 @@ function setupSupportAgent() {
         input.value = '';
         const typing = document.createElement('div');
         typing.className = 'support-message agent typing';
-        typing.innerHTML = '<span>Thinking…</span>';
+        typing.innerHTML = '<span>Thinking...</span>';
         messages.append(typing);
         messages.scrollTop = messages.scrollHeight;
 

@@ -14,6 +14,7 @@ https://nawodtharuka2003-source.github.io/farmers-buyers-matching-system/
 - **Smart matches:** Rank crop-compatible offers that meet a buyer's maximum price. Suitability considers price, distance, and supply coverage.
 - **Allocations:** Allocate available stock to compatible requests without assigning more than a farmer has listed.
 - **Route map:** View road-route information for selected matches.
+- **Dark mode:** Follows your device setting by default and remembers your choice when you switch themes.
 
 Recommendations are for decision support. Confirm produce quality, availability, prices, and delivery terms with participants.
 
