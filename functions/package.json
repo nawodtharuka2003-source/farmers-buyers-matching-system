@@ -1,0 +1,17 @@
+{
+  "name": "croplink-functions",
+  "description": "Secure backend for the CropLink AI assistant",
+  "private": true,
+  "engines": {
+    "node": "22"
+  },
+  "main": "index.js",
+  "scripts": {
+    "lint": "node --check index.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.1",
+    "firebase-functions": "^7.4.0",
+    "openai": "^7.64.0"
+  }
+}

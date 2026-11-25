@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase-config.js";
+import { aiAssistantUrl, auth, db } from "./firebase-config.js";
 import {
     createUserWithEmailAndPassword,
     onAuthStateChanged,
@@ -1465,28 +1465,6 @@ function setupSupportAgent() {
     const escapeChatHtml = value => String(value).replace(/[&<>"']/g, char => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[char]));
-    const knowledge = {
-        sinhala: {
-            greeting: ['හෙලෝ','හායි','සුබ','ආයුබෝවන්'], farmer: ['ගොවියා','ගොවි','විකුණු','අලෙවි','ගොවියන්'], buyer: ['ගැණුම්කරු','ගන්න','ගැනුම්','මිලදී'], match: ['ගැලපු','ලකුණු','ස්මාර්ට්'], allocation: ['allocation','බෙදා','බෙද','ප්‍රමාණ'], signin: ['ලොගින්','sign in','පුර','password','මුරපද'], error: ['error','දෝෂ','save','සුරකි','firestore','firebase']
-        },
-        singlish: {
-            greeting: ['hello','hi','ayubowan','kohomada'], farmer: ['goviya','govi','farmer','supplier','wikun'], buyer: ['buyer','ganumkaru','ganna','demand','miiladi'], match: ['match','gelapu','score','smart'], allocation: ['allocation','bada','beda','pramana','kotasa'], signin: ['login','sign in','signin','password','murapada'], error: ['error','dosha','save','sura','firebase','firestore']
-        },
-        english: {
-            greeting: ['hello','hi','hey','good morning'], farmer: ['farmer','supplier','sell','add','produce'], buyer: ['buyer','demand','purchase','request','buy'], match: ['match','score','compatible','smart'], allocation: ['allocation','allocate','quantity','distribution'], signin: ['login','sign in','signin','password','account'], error: ['error','save','firebase','firestore','permission','rules']
-        }
-    };
-    const answers = {
-        sinhala: {
-            greeting:'ආයුබෝවන්! ගොවීන්, ගැණුම්කරුවන්, matching, allocation සහ sign-in ගැන මගෙන් අසන්න පුළුවන්.', farmer:'ගොවියෙකු එකතු කිරීමට “Add farmer” click කර නම, crop, quantity (kg), asking price සහ location ඇතුළත් කර “Save farmer” click කරන්න.', buyer:'Buyer එකතු කිරීමට Buyers/Demand page එකේ “Add buyer” click කර නම, crop, quantity, maximum price සහ location ඇතුළත් කරන්න.', match:'Smart matching වලදී crop, quantity coverage, price fit සහ travel distance බලයි. Score එක වැඩි නම් match එක වඩා හොඳයි.', allocation:'Allocations page එකේ “Run allocation” click කරන්න. හොඳම matches අනුව supply distribute කර quantity oversell වීම වැළකෙයි.', signin:'Firebase Authentication account එකේ email සහ password යොදා sign in වෙන්න. Role එක Coordinator, Farmer හෝ Buyer ලෙස තෝරන්න.', error:'Record save කිරීමට sign in වී සිටිය යුතුයි. Firebase Authentication enable කර Firestore rules වල signed-in user ට read/write permissions තිබේද බලන්න.'
-        },
-        singlish: {
-            greeting:'Ayubowan! Farmers, buyers, matching, allocation saha sign-in gena mama help karanna puluwan.', farmer:'Farmer kenek add karanna “Add farmer” button click karala name, crop, quantity (kg), asking price saha location dala “Save farmer” click karanna.', buyer:'Buyer kenek add karanna Buyers/Demand page eke “Add buyer” click karala name, crop, quantity, maximum price saha location enter karanna.', match:'Smart matching eke crop, quantity coverage, price fit saha travel distance balala score eka hadanawa. Score wadi nam match eka hodai.', allocation:'Allocations page eke “Run allocation” click karanna. Ranked matches walata supply distribute wela quantity oversell wenne naha.', signin:'Firebase Authentication account eke email saha password dala sign in wenna. Role eka Coordinator, Farmer, or Buyer lesa select karanna.', error:'Record save karanna sign in wela tiyanawan witharai. Firebase Authentication enable karala Firestore rules signed-in user ta read/write permission dennawada kiyala balanna.'
-        },
-        english: {
-            greeting:'Hello! I can help with farmers, buyers, matching, allocations, and sign-in.', farmer:'To add a farmer, click “Add farmer”, enter the farmer name, crop, quantity, asking price, and location, then click “Save farmer”.', buyer:'To add a buyer, open the Buyer demand page and click “Add buyer”. Enter the buyer name, crop, quantity, maximum price, and location.', match:'Smart matching considers crop fit, price fit, quantity coverage, and travel distance. A higher score indicates a better match.', allocation:'Open Allocations and click “Run allocation”. Supply is distributed by ranked matches without overselling quantities.', signin:'Sign in with a Firebase Authentication account and choose Coordinator, Farmer, or Buyer in the login role section.', error:'Saving requires sign-in. Verify that Firebase Authentication is enabled and that Firestore rules allow the signed-in user to read and write records.'
-        }
-    };
 
     const panel = document.createElement('section');
     panel.className = 'support-agent';
@@ -1497,6 +1475,13 @@ function setupSupportAgent() {
         <div class="support-suggestions"><button type="button">How do I add a farmer?</button><button type="button">How are matches calculated?</button></div>
         <form class="support-agent-form"><input name="message" type="text" autocomplete="off" placeholder="Ask a question…" aria-label="Ask a question" required><button type="submit" aria-label="Send message">➤</button></form>`;
     document.body.append(panel);
+    const launcher = document.createElement('button');
+    launcher.className = 'support-agent-launcher';
+    launcher.type = 'button';
+    launcher.setAttribute('aria-label', 'Open CropLink AI assistant');
+    launcher.setAttribute('aria-expanded', 'false');
+    launcher.textContent = 'Ask AI';
+    document.body.append(launcher);
 
     const trigger = document.querySelector('.help-card');
     const close = panel.querySelector('.support-agent-close');
@@ -1504,51 +1489,37 @@ function setupSupportAgent() {
     const input = form.querySelector('input');
     const messages = panel.querySelector('.support-agent-messages');
 
+    const openAssistant = () => {
+        panel.classList.add('open');
+        launcher.hidden = true;
+        launcher.setAttribute('aria-expanded', 'true');
+        trigger?.setAttribute('aria-expanded', 'true');
+        setTimeout(() => input.focus(), 50);
+    };
+
     if (trigger) {
         trigger.classList.add('support-agent-trigger');
         trigger.setAttribute('role', 'button');
         trigger.setAttribute('tabindex', '0');
         trigger.setAttribute('aria-expanded', 'false');
-        const open = () => { panel.classList.add('open'); trigger.setAttribute('aria-expanded', 'true'); setTimeout(() => input.focus(), 50); };
-        trigger.addEventListener('click', open);
+        trigger.addEventListener('click', openAssistant);
         trigger.addEventListener('keydown', event => {
-            if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
+            if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openAssistant(); }
         });
     }
-    close.addEventListener('click', () => { panel.classList.remove('open'); trigger?.setAttribute('aria-expanded', 'false'); });
+    launcher.addEventListener('click', openAssistant);
+    close.addEventListener('click', () => {
+        panel.classList.remove('open');
+        launcher.hidden = false;
+        launcher.setAttribute('aria-expanded', 'false');
+        trigger?.setAttribute('aria-expanded', 'false');
+    });
 
-    const answerQuestion = question => {
-        const text = question.toLowerCase();
-        const hasSinhalaScript = /[\u0D80-\u0DFF]/.test(question);
-        const singlishMarkers = ['kohomada', 'puluwan', 'karanna', 'wikun', 'goviya', 'ganna', 'gelapu', 'bada', 'pramana', 'danna', 'wela', 'wenna', 'hodai', 'saha', 'enna', 'mata', 'oya'];
-        const language = hasSinhalaScript
-            ? 'sinhala'
-            : (singlishMarkers.some(marker => text.includes(marker)) ? 'singlish' : 'english');
-
-        let bestCategory = 'greeting';
-        let bestScore = 0;
-        Object.entries(knowledge[language]).forEach(([category, words]) => {
-            const score = words.filter(word => text.includes(word)).length;
-            if (score > bestScore) {
-                bestScore = score;
-                bestCategory = category;
-            }
-        });
-
-        if (language === 'sinhala') {
-            if (!bestScore) return 'මට ගොවීන්, ගැණුම්කරුවන්, matching, allocation, Firebase sign-in හෝ data save කිරීම ගැන උදව් කරන්න පුළුවන්.';
-        } else if (language === 'singlish') {
-            if (!bestScore) return 'Mata farmers, buyers, matching, allocation, Firebase sign-in saha records save karanna help karanna puluwan. Prashne ahanna.';
-        } else if (!bestScore) {
-            return 'I can help with farmers, buyers, matching, allocations, Firebase sign-in, and saving data.';
-        }
-
-        return answers[language][bestCategory];
-    };
-
-    const sendQuestion = question => {
+    const conversation = [];
+    let isSending = false;
+    const sendQuestion = async question => {
         const clean = question.trim();
-        if (!clean) return;
+        if (!clean || isSending) return;
         messages.insertAdjacentHTML('beforeend', `<div class="support-message user"><span>${escapeChatHtml(clean)}</span></div>`);
         input.value = '';
         const typing = document.createElement('div');
@@ -1556,11 +1527,51 @@ function setupSupportAgent() {
         typing.innerHTML = '<span>Thinking…</span>';
         messages.append(typing);
         messages.scrollTop = messages.scrollHeight;
-        window.setTimeout(() => {
+
+        const sendButton = form.querySelector('button[type="submit"]');
+        isSending = true;
+        input.disabled = true;
+        sendButton.disabled = true;
+        try {
+            const user = auth.currentUser;
+            if (!user) throw new Error('Sign in to use the AI assistant.');
+            const token = await user.getIdToken();
+            const pendingMessages = [
+                ...conversation,
+                { role: 'user', content: clean }
+            ].slice(-10);
+            const response = await fetch(aiAssistantUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ messages: pendingMessages })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'The AI assistant could not answer right now.');
+            if (typeof result.answer !== 'string' || !result.answer.trim()) {
+                throw new Error('The AI assistant returned an empty response.');
+            }
+
+            conversation.push(
+                { role: 'user', content: clean },
+                { role: 'assistant', content: result.answer }
+            );
+            conversation.splice(0, Math.max(0, conversation.length - 10));
             typing.remove();
-            messages.insertAdjacentHTML('beforeend', `<div class="support-message agent"><span>${escapeChatHtml(answerQuestion(clean))}</span></div>`);
+            messages.insertAdjacentHTML('beforeend', `<div class="support-message agent"><span>${escapeChatHtml(result.answer)}</span></div>`);
+        } catch (error) {
+            console.error('CropLink AI assistant request failed:', error);
+            typing.remove();
+            messages.insertAdjacentHTML('beforeend', `<div class="support-message agent"><span>${escapeChatHtml(error.message)}</span></div>`);
+        } finally {
+            isSending = false;
+            input.disabled = false;
+            sendButton.disabled = false;
             messages.scrollTop = messages.scrollHeight;
-        }, 450);
+            input.focus();
+        }
     };
 
     form.addEventListener('submit', event => { event.preventDefault(); sendQuestion(input.value); });

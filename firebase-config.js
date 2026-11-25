@@ -16,3 +16,4 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const aiAssistantUrl = "https://us-central1-farming-management-syste-57dec.cloudfunctions.net/croplinkAssistant";
