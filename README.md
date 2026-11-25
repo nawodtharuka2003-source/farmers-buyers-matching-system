@@ -12,7 +12,7 @@ https://nawodtharuka2003-source.github.io/farmers-buyers-matching-system/
 - **Farmers:** Add and search farmer produce, quantity, asking price, and location.
 - **Buyer demand:** Add and search crop requests, quantities, target prices, and delivery locations.
 - **Smart matches:** Rank crop-compatible offers that meet a buyer's maximum price. Suitability considers price, distance, and supply coverage.
-- **Allocations:** Allocate available stock to compatible requests without assigning more than a farmer has listed.
+- **Allocations:** Suggest supply for buyer requests, then confirm completed sales to update farmer stock and remaining buyer demand.
 - **Route map:** View road-route information for selected matches.
 - **Dark mode:** Follows your device setting by default and remembers your choice when you switch themes.
 

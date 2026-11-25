@@ -393,11 +393,16 @@ import {
         return route?.distanceKm ?? onlineDistanceCache.get(routeKey(firstKey, secondKey)) ?? dijkstraRoute(firstKey, secondKey).distance;
     }
 
+    function getOpenBuyerRequests() {
+        return data.buyers.filter(buyer => Number(buyer.quantity) > 0);
+    }
+
     function getMatches() {
         const matches = [];
         for (const farmer of data.farmers) {
             for (const buyer of data.buyers) {
-                if (farmer.product !== buyer.product || farmer.price > buyer.maxPrice) continue;
+                if (Number(farmer.quantity) <= 0 || Number(buyer.quantity) <= 0
+                    || farmer.product !== buyer.product || farmer.price > buyer.maxPrice) continue;
                 const routeData = dijkstraRoute(farmer.location, buyer.location);
                 const distance = distanceBetween(farmer.location, buyer.location);
                 const priceFit = 100 - 50 * (farmer.price / buyer.maxPrice);
@@ -500,12 +505,13 @@ import {
         const farmers = byId('farmersNavCount');
         const buyers = byId('buyersNavCount');
         if (farmers) farmers.textContent = data.farmers.length;
-        if (buyers) buyers.textContent = data.buyers.length;
+        if (buyers) buyers.textContent = getOpenBuyerRequests().length;
     }
 
     function renderDashboard(matches) {
+        const openBuyers = getOpenBuyerRequests();
         const totalSupply = data.farmers.reduce((sum, farmer) => sum + Number(farmer.quantity), 0);
-        const demandByProduct = data.buyers.reduce((counts, buyer) => {
+        const demandByProduct = openBuyers.reduce((counts, buyer) => {
             counts[buyer.product] = (counts[buyer.product] || 0) + Number(buyer.quantity);
             return counts;
         }, {});
@@ -513,14 +519,14 @@ import {
         const maxDemand = Math.max(1, ...demandEntries.map(entry => entry[1]));
 
         if (byId('dashboardFarmerCount')) byId('dashboardFarmerCount').textContent = data.farmers.length;
-        if (byId('dashboardBuyerCount')) byId('dashboardBuyerCount').textContent = data.buyers.length;
+        if (byId('dashboardBuyerCount')) byId('dashboardBuyerCount').textContent = openBuyers.length;
         if (byId('dashboardMatchCount')) byId('dashboardMatchCount').textContent = matches.length;
         if (byId('dashboardSupply')) byId('dashboardSupply').textContent = formatNumber(totalSupply);
 
         if (byId('demandList')) {
             byId('demandList').innerHTML = demandEntries.length
                 ? demandEntries.map(([product, quantity]) => `<div><div class="demand-row-head"><span>${escapeHtml(product)}</span><span>${formatNumber(quantity)} kg</span></div><div class="progress-track"><div class="progress-fill" style="width:${Math.max(4, quantity / maxDemand * 100)}%"></div></div></div>`).join('')
-                : '<p class="muted">No buyer requests have been added.</p>';
+                : '<p class="muted">No open buyer demand.</p>';
         }
 
         const table = byId('dashboardMatches');
@@ -587,7 +593,7 @@ import {
         const filtered = data.farmers.filter(farmer => `${farmer.name} ${farmer.product} ${getLocationName(farmer.location)}`.toLowerCase().includes(search));
         const table = byId('farmersTable');
         if (table) {
-            table.innerHTML = filtered.map(farmer => `<tr><td>${personCell(farmer.name, `Supplier · ${getLocationName(farmer.location)}`)}</td><td><span class="crop-tag">${escapeHtml(farmer.product)}</span></td><td><strong>${formatNumber(farmer.quantity)} kg</strong></td><td>${formatMoney(farmer.price)} / kg</td><td>${escapeHtml(getLocationName(farmer.location))}</td><td><span class="status-tag">Available</span></td></tr>`).join('');
+            table.innerHTML = filtered.map(farmer => `<tr><td>${personCell(farmer.name, `Supplier · ${getLocationName(farmer.location)}`)}</td><td><span class="crop-tag">${escapeHtml(farmer.product)}</span></td><td><strong>${formatNumber(farmer.quantity)} kg</strong></td><td>${formatMoney(farmer.price)} / kg</td><td>${escapeHtml(getLocationName(farmer.location))}</td><td><span class="status-tag">${Number(farmer.quantity) > 0 ? 'Available' : 'Sold out'}</span></td></tr>`).join('');
             if (!filtered.length) table.innerHTML = `<tr><td colspan="6" class="empty-state">${search ? 'No farmers match your search.' : 'No farmers have been added.'}</td></tr>`;
         }
         const resultCount = byId('farmerResultCount');
@@ -600,14 +606,15 @@ import {
     function renderBuyers() {
         const search = (byId('buyerSearch')?.value || '').trim().toLowerCase();
         const filtered = data.buyers.filter(buyer => `${buyer.name} ${buyer.product} ${getLocationName(buyer.location)}`.toLowerCase().includes(search));
+        const openBuyers = getOpenBuyerRequests();
         const table = byId('buyersTable');
         if (table) {
-            table.innerHTML = filtered.map(buyer => `<tr><td>${personCell(buyer.name, `Buyer · ${getLocationName(buyer.location)}`, true)}</td><td><span class="crop-tag">${escapeHtml(buyer.product)}</span></td><td><strong>${formatNumber(buyer.quantity)} kg</strong></td><td>${formatMoney(buyer.maxPrice)} / kg</td><td>${escapeHtml(getLocationName(buyer.location))}</td><td><span class="status-tag">Open</span></td></tr>`).join('');
+            table.innerHTML = filtered.map(buyer => `<tr><td>${personCell(buyer.name, `Buyer · ${getLocationName(buyer.location)}`, true)}</td><td><span class="crop-tag">${escapeHtml(buyer.product)}</span></td><td><strong>${formatNumber(buyer.quantity)} kg</strong></td><td>${formatMoney(buyer.maxPrice)} / kg</td><td>${escapeHtml(getLocationName(buyer.location))}</td><td><span class="status-tag">${Number(buyer.quantity) > 0 ? 'Open' : 'Fulfilled'}</span></td></tr>`).join('');
             if (!filtered.length) table.innerHTML = `<tr><td colspan="6" class="empty-state">${search ? 'No buyer requests match your search.' : 'No buyer requests have been added.'}</td></tr>`;
         }
         const totalDemand = data.buyers.reduce((sum, buyer) => sum + Number(buyer.quantity), 0);
-        const averagePrice = data.buyers.length ? data.buyers.reduce((sum, buyer) => sum + Number(buyer.maxPrice), 0) / data.buyers.length : 0;
-        if (byId('buyersPageCount')) byId('buyersPageCount').textContent = data.buyers.length;
+        const averagePrice = openBuyers.length ? openBuyers.reduce((sum, buyer) => sum + Number(buyer.maxPrice), 0) / openBuyers.length : 0;
+        if (byId('buyersPageCount')) byId('buyersPageCount').textContent = openBuyers.length;
         if (byId('buyersPageDemand')) byId('buyersPageDemand').textContent = formatNumber(totalDemand);
         if (byId('buyersAveragePrice')) byId('buyersAveragePrice').textContent = formatNumber(averagePrice);
     }
@@ -633,7 +640,7 @@ import {
         const fulfilled = data.buyers.filter(buyer => (remaining.get(buyer.id) || 0) === 0).length;
         const table = byId('allocationsTable');
         if (table) {
-            table.innerHTML = allocations.map(item => `<tr><td>${personCell(item.farmer.name, getLocationName(item.farmer.location))}</td><td><span class="crop-tag">${escapeHtml(item.farmer.product)}</span></td><td>${personCell(item.buyer.name, getLocationName(item.buyer.location), true)}</td><td class="allocation-cell">${formatNumber(item.quantity)} kg</td><td>${formatMoney(item.farmer.price)} / kg</td><td>${scoreCell(item.score)}</td></tr>`).join('');
+            table.innerHTML = allocations.map(item => `<tr><td><button class="button button-primary mark-sold-button" type="button" data-farmer-id="${escapeHtml(item.farmer.id)}" data-buyer-id="${escapeHtml(item.buyer.id)}" data-quantity="${item.quantity}" aria-label="Mark ${formatNumber(item.quantity)} kg sold from ${escapeHtml(item.farmer.name)} to ${escapeHtml(item.buyer.name)}"${currentUser ? '' : ' disabled'}>Mark as sold</button></td><td>${personCell(item.farmer.name, getLocationName(item.farmer.location))}</td><td><span class="crop-tag">${escapeHtml(item.farmer.product)}</span></td><td>${personCell(item.buyer.name, getLocationName(item.buyer.location), true)}</td><td class="allocation-cell">${formatNumber(item.quantity)} kg</td><td>${formatMoney(item.farmer.price)} / kg</td><td>${scoreCell(item.score)}</td></tr>`).join('');
         }
         if (byId('noAllocationsMessage')) byId('noAllocationsMessage').classList.toggle('hidden', allocations.length > 0);
         if (byId('allocatedQuantity')) byId('allocatedQuantity').textContent = formatNumber(totalAllocated);
@@ -996,6 +1003,58 @@ import {
         });
     }
 
+    async function recordSale(farmerId, buyerId, soldQuantity) {
+        const ownerUid = currentUser?.uid;
+        const quantity = Number(soldQuantity);
+        if (!ownerUid) throw new Error('Sign in before recording a sale.');
+        if (!farmerId || !buyerId || !Number.isFinite(quantity) || quantity <= 0) {
+            throw new Error('The sale details are invalid.');
+        }
+
+        const farmerRef = doc(db, 'farmers', farmerId);
+        const buyerRef = doc(db, 'buyerRequests', buyerId);
+        await runTransaction(db, async transaction => {
+            const [farmerSnapshot, buyerSnapshot] = await Promise.all([
+                transaction.get(farmerRef),
+                transaction.get(buyerRef)
+            ]);
+            if (!farmerSnapshot.exists() || !buyerSnapshot.exists()) {
+                throw new Error('The farmer or buyer request no longer exists.');
+            }
+
+            const farmer = farmerSnapshot.data();
+            const buyer = buyerSnapshot.data();
+            if (farmer.ownerUid !== ownerUid || buyer.ownerUid !== ownerUid) {
+                throw new Error('This sale does not belong to your account.');
+            }
+
+            const availableQuantity = Number(farmer.quantity);
+            const requestedQuantity = Number(buyer.quantity);
+            const farmerPrice = Number(farmer.price);
+            const buyerMaximumPrice = Number(buyer.maxPrice);
+            if (!Number.isFinite(availableQuantity) || !Number.isFinite(requestedQuantity)
+                || availableQuantity < 0 || requestedQuantity < 0) {
+                throw new Error('The farmer stock or buyer request has an invalid quantity.');
+            }
+            if (farmer.product !== buyer.product || !Number.isFinite(farmerPrice)
+                || !Number.isFinite(buyerMaximumPrice) || farmerPrice > buyerMaximumPrice) {
+                throw new Error('This match is no longer eligible. Review the updated allocation.');
+            }
+            if (quantity > availableQuantity || quantity > requestedQuantity) {
+                throw new Error('Stock or buyer demand changed. Review the updated allocation before confirming.');
+            }
+
+            transaction.update(farmerRef, {
+                quantity: availableQuantity - quantity,
+                updatedAt: serverTimestamp()
+            });
+            transaction.update(buyerRef, {
+                quantity: requestedQuantity - quantity,
+                updatedAt: serverTimestamp()
+            });
+        });
+    }
+
     async function addRecord(type, form) {
         const formData = new FormData(form);
         const errorElement = byId(`${type}FormError`);
@@ -1075,6 +1134,17 @@ import {
             document.querySelector('.page-content')?.prepend(notice);
         }
         if (notice) notice.textContent = message;
+    }
+
+    function showAllocationNotice(message, isError = false) {
+        const notice = byId('allocationNotice');
+        if (!notice) {
+            console.error('Allocation status element is missing.');
+            return;
+        }
+        notice.textContent = message;
+        notice.classList.toggle('error', isError);
+        notice.classList.remove('hidden');
     }
 
     function stopRecordListeners() {
@@ -1422,6 +1492,36 @@ import {
             renderAllocations(getMatches());
             const label = byId('allocationResultLabel');
             if (label) label.textContent = `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        });
+        byId('allocationsTable')?.addEventListener('click', async event => {
+            const button = event.target instanceof Element
+                ? event.target.closest('.mark-sold-button')
+                : null;
+            if (!(button instanceof HTMLButtonElement) || button.disabled) return;
+
+            const farmer = data.farmers.find(record => record.id === button.dataset.farmerId);
+            const buyer = data.buyers.find(record => record.id === button.dataset.buyerId);
+            const quantity = Number(button.dataset.quantity);
+            if (!farmer || !buyer || !Number.isFinite(quantity) || quantity <= 0) {
+                showAllocationNotice('This allocation is out of date. Wait for the data to refresh, then try again.', true);
+                return;
+            }
+
+            const confirmation = `Confirm sale of ${formatNumber(quantity)} kg of ${farmer.product} from ${farmer.name} to ${buyer.name}? This will reduce both farmer stock and the buyer's remaining request.`;
+            if (!window.confirm(confirmation)) return;
+
+            button.disabled = true;
+            button.textContent = 'Saving...';
+            try {
+                await recordSale(farmer.id, buyer.id, quantity);
+                button.textContent = 'Sold';
+                showAllocationNotice(`Sale recorded: ${formatNumber(quantity)} kg. Farmer stock and buyer demand have been updated.`);
+            } catch (error) {
+                console.error('Unable to record the sale:', error);
+                button.disabled = false;
+                button.textContent = 'Mark as sold';
+                showAllocationNotice(`Could not record this sale: ${error.message}`, true);
+            }
         });
         byId('routeMapMatchSelect')?.addEventListener('change', () => renderRouteMap(getMatches()));
     }

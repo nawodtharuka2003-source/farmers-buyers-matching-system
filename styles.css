@@ -165,6 +165,8 @@ tbody tr:hover { background: #fbfdfc; }
 .hidden { display: none !important; }
 .result-label { padding: 6px 9px; border-radius: 20px; background: #eef7f1; color: #3b8c67; font-size: 9px; font-weight: 700; }
 .allocation-cell { color: #17865d; font-weight: 700; }
+.mark-sold-button { min-height: 32px; padding: 0 10px; white-space: nowrap; }
+.mark-sold-button:disabled { cursor: not-allowed; opacity: .65; }
 
 .form-dialog { width: min(500px, calc(100vw - 28px)); padding: 0; border: 0; border-radius: 12px; box-shadow: 0 20px 70px rgba(20,46,34,.22); }
 .form-dialog::backdrop { background: rgba(23,43,33,.35); backdrop-filter: blur(2px); }
@@ -474,6 +476,8 @@ td { padding: 16px 15px; font-size: 13px; color: #40544a; }
 .auth-mode-toggle:hover { text-decoration: underline; }
 .sign-out-button { min-height: 31px; padding: 0 10px; font-size: 10px; }
 .firebase-notice { margin: 0 0 14px; padding: 10px 12px; border: 1px solid #f0d7b6; border-radius: 7px; background: #fff9ef; color: #8a672f; }
+.sale-notice { margin: 0 0 12px; padding: 10px 12px; border: 1px solid #dfeee5; border-radius: 7px; background: #f2faf5; color: #315343; font-size: 12px; }
+.sale-notice.error { border-color: #f0d7b6; background: #fff9ef; color: #8a672f; }
 
 .auth-card { position: relative; }
 .auth-close {
@@ -638,6 +642,8 @@ td { padding: 16px 15px; font-size: 13px; color: #40544a; }
 :root[data-theme="dark"] .auth-close:hover,
 :root[data-theme="dark"] .support-agent-close:hover { background: var(--dark-surface-hover); color: var(--dark-text); }
 :root[data-theme="dark"] .firebase-notice { border-color: #58472f; background: #302719; color: #e4c48f; }
+:root[data-theme="dark"] .sale-notice { border-color: #2e5140; background: #1b3025; color: #c4d9cc; }
+:root[data-theme="dark"] .sale-notice.error { border-color: #58472f; background: #302719; color: #e4c48f; }
 :root[data-theme="dark"] .form-error { color: #ff9a9a; }
 :root[data-theme="dark"] td,
 :root[data-theme="dark"] .notification-heading,
