@@ -46,7 +46,7 @@ The app uses Firebase Authentication for sign-in and Cloud Firestore for farmer 
 
 1. Configure the web app settings in `firebase-config.js`.
 2. Enable the Email/Password sign-in provider in Firebase Authentication.
-3. Create a user account in Firebase Authentication; the app provides sign-in, not account registration.
+3. Users can create accounts from the sign-in screen with their email address and a password, or you can create accounts in Firebase Authentication.
 4. Create a Firestore database and configure security rules to protect each user's records.
 5. For the GitHub Pages deployment, add `nawodtharuka2003-source.github.io` to Firebase Authentication's authorized domains.
 

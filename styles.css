@@ -455,6 +455,8 @@ td { padding: 16px 15px; font-size: 13px; color: #40544a; }
 .password-field input { padding-right: 62px; }
 .password-toggle { position: absolute; right: 7px; top: 7px; height: 28px; border: 0; border-radius: 5px; background: #edf6f1; color: #16855d; font-size: 10px; font-weight: 800; }
 .auth-submit { width: 100%; }
+.auth-mode-toggle { border: 0; background: transparent; color: #16855d; font-size: 12px; font-weight: 700; cursor: pointer; }
+.auth-mode-toggle:hover { text-decoration: underline; }
 .sign-out-button { min-height: 31px; padding: 0 10px; font-size: 10px; }
 .firebase-notice { margin: 0 0 14px; padding: 10px 12px; border: 1px solid #f0d7b6; border-radius: 7px; background: #fff9ef; color: #8a672f; }
 

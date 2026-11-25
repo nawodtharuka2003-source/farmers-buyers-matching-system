@@ -1,5 +1,6 @@
 import { auth, db } from "./firebase-config.js";
 import {
+    createUserWithEmailAndPassword,
     onAuthStateChanged,
     signInWithEmailAndPassword,
     signOut
@@ -1142,8 +1143,8 @@ import {
                 <button type="button" class="auth-close" aria-label="Close sign-in">×</button>
                 <span class="brand-mark auth-logo">C</span>
                 <p class="eyebrow">CROPLINK WORKSPACE</p>
-                <h1>Sign in to your workspace</h1>
-                <p class="muted">Select your role and use your Firebase account.</p>
+                <h1 id="authTitle">Sign in to your workspace</h1>
+                <p class="muted" id="authDescription">Select your role and use your Firebase account.</p>
                 <label>Login as
                     <select name="role" required>
                         <option value="Coordinator">Coordinator</option>
@@ -1157,6 +1158,7 @@ import {
                 </label>
                 <p id="authError" class="form-error" role="alert"></p>
                 <button class="button button-primary auth-submit" type="submit">Sign in</button>
+                <button id="authModeToggle" class="auth-mode-toggle" type="button">New here? Create an account</button>
             </form>`;
         document.body.append(authGate);
 
@@ -1170,9 +1172,27 @@ import {
         });
 
         const passwordToggle = document.querySelector('.password-toggle');
+        let isCreatingAccount = false;
+        const authTitle = byId('authTitle');
+        const authDescription = byId('authDescription');
+        const authSubmit = byId('authForm').querySelector('.auth-submit');
+        const passwordInput = byId('authForm').querySelector('[name="password"]');
+
+        byId('authModeToggle').addEventListener('click', () => {
+            isCreatingAccount = !isCreatingAccount;
+            authTitle.textContent = isCreatingAccount ? 'Create your workspace account' : 'Sign in to your workspace';
+            authDescription.textContent = isCreatingAccount
+                ? 'Create an account with your email address and a password.'
+                : 'Select your role and use your Firebase account.';
+            authSubmit.textContent = isCreatingAccount ? 'Create account' : 'Sign in';
+            passwordInput.autocomplete = isCreatingAccount ? 'new-password' : 'current-password';
+            byId('authModeToggle').textContent = isCreatingAccount
+                ? 'Already have an account? Sign in'
+                : 'New here? Create an account';
+            byId('authError').textContent = '';
+        });
+
         passwordToggle?.addEventListener('click', () => {
-            const passwordInput = byId('authForm')?.querySelector('[name="password"]');
-            if (!passwordInput) return;
             const showPassword = passwordInput.type === 'password';
             passwordInput.type = showPassword ? 'text' : 'password';
             passwordToggle.textContent = showPassword ? 'Hide' : 'Show';
@@ -1185,20 +1205,23 @@ import {
             const button = form.querySelector('button[type="submit"]');
             const errorElement = byId('authError');
             const role = String(new FormData(form).get('role') || 'Coordinator');
+            const formData = new FormData(form);
+            const email = String(formData.get('email')).trim();
+            const password = String(formData.get('password'));
             errorElement.textContent = '';
             button.disabled = true;
             try {
-                await signInWithEmailAndPassword(
-                    auth,
-                    String(new FormData(form).get('email')).trim(),
-                    String(new FormData(form).get('password'))
-                );
+                if (isCreatingAccount) {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                } else {
+                    await signInWithEmailAndPassword(auth, email, password);
+                }
                 localStorage.setItem('croplink-login-role', role);
                 updateProfileRole(role);
                 form.reset();
             } catch (error) {
-                console.error('Firebase sign-in failed:', error);
-                errorElement.textContent = `Sign-in failed: ${error.message}`;
+                console.error(`Firebase ${isCreatingAccount ? 'account creation' : 'sign-in'} failed:`, error);
+                errorElement.textContent = `${isCreatingAccount ? 'Account creation' : 'Sign-in'} failed: ${error.message}`;
             } finally {
                 button.disabled = false;
             }
