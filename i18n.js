@@ -677,8 +677,8 @@
         const routeOption = trimmed.match(/^(.+) to (.+) \(([\d,]+) km\)$/);
         if (routeOption) {
             const result = language === 'si'
-                ? `${routeOption[1]} සිට ${routeOption[2]} දක්වා (${routeOption[3]} කි.මී.)`
-                : `${routeOption[1]} முதல் ${routeOption[2]} வரை (${routeOption[3]} கி.மீ.)`;
+                ? `${translateLocation(routeOption[1], language)} සිට ${translateLocation(routeOption[2], language)} දක්වා (${routeOption[3]} කි.මී.)`
+                : `${translateLocation(routeOption[1], language)} முதல் ${translateLocation(routeOption[2], language)} வரை (${routeOption[3]} கி.மீ.)`;
             return source.replace(trimmed, result);
         }
         const quantityPrice = trimmed.match(/^(.+) \/ (.+) max$/);

@@ -859,7 +859,7 @@ import {
         const optionValue = match => routeKey(match.farmer.id, match.buyer.id);
         if (select) {
             select.innerHTML = '<option value="">Select a match</option>' + visibleMatches.map(match =>
-                `<option value="${escapeHtml(optionValue(match))}">${escapeHtml(match.farmer.name)} to ${escapeHtml(match.buyer.name)} (${Math.round(match.distance)} km)</option>`
+                `<option value="${escapeHtml(optionValue(match))}">${escapeHtml(getLocationName(match.farmer.location))} to ${escapeHtml(getLocationName(match.buyer.location))} (${Math.round(match.distance)} km)</option>`
             ).join('');
             if (visibleMatches.some(match => optionValue(match) === selectedValue)) select.value = selectedValue;
             else if (visibleMatches[0]) select.value = optionValue(visibleMatches[0]);
