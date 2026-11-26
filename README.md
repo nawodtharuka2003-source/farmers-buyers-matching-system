@@ -15,6 +15,7 @@ https://nawodtharuka2003-source.github.io/farmers-buyers-matching-system/
 - **Allocations:** Suggest supply for buyer requests, then confirm completed sales to update farmer stock and remaining buyer demand.
 - **Route map:** View road-route information for selected matches.
 - **Dark mode:** Follows your device setting by default and remembers your choice when you switch themes.
+- **Languages:** Switch the interface between English, Sinhala, and Tamil; the selected language is remembered on the device.
 
 Recommendations are for decision support. Confirm produce quality, availability, prices, and delivery terms with participants.
 

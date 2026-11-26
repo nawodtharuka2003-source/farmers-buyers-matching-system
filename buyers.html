@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CropLink | Buyer demand</title>
     <script src="theme.js"></script>
+    <script src="i18n.js"></script>
     <link rel="stylesheet" href="styles.css">
     <script type="module" src="app.js"></script>
 </head>
@@ -35,6 +36,6 @@
             </section>
         </main>
     </div>
-    <dialog id="buyerDialog" class="form-dialog"><form id="buyerForm"><div class="dialog-heading"><div><p class="eyebrow">NEW DEMAND</p><h2>Add a buyer request</h2></div><button type="button" class="close-button" data-close-dialog aria-label="Close">Close</button></div><div class="form-grid"><label>Buyer / business name<input name="name" required placeholder="e.g. FreshMart"></label><label>Product<select name="product" required><option value="">Select a crop</option><option>Rice</option><option>Tomato</option><option>Potato</option><option>Onion</option><option>Carrot</option><option>Banana</option><option>Chili</option><option>Cabbage</option></select></label><label>Quantity needed (kg)<input name="quantity" type="number" min="1" required placeholder="1000"></label><label>Maximum price (LKR / kg)<input name="maxPrice" type="number" min="1" required placeholder="180"></label><label class="full-field">Delivery location<select name="location" required><option value="">Select a location</option></select></label></div><p class="form-error" id="buyerFormError" role="alert"></p><div class="dialog-actions"><button type="button" class="button button-quiet" data-close-dialog>Cancel</button><button type="submit" class="button button-primary">Save request</button></div></form></dialog>
+    <dialog id="buyerDialog" class="form-dialog"><form id="buyerForm"><div class="dialog-heading"><div><p class="eyebrow">NEW DEMAND</p><h2>Add a buyer request</h2></div><button type="button" class="close-button" data-close-dialog aria-label="Close">Close</button></div><div class="form-grid"><label>Buyer / business name<input name="name" required placeholder="e.g. FreshMart"></label><label>Product<select name="product" required><option value="">Select a crop</option><option value="Rice">Rice</option><option value="Tomato">Tomato</option><option value="Potato">Potato</option><option value="Onion">Onion</option><option value="Carrot">Carrot</option><option value="Banana">Banana</option><option value="Chili">Chili</option><option value="Cabbage">Cabbage</option></select></label><label>Quantity needed (kg)<input name="quantity" type="number" min="1" required placeholder="1000"></label><label>Maximum price (LKR / kg)<input name="maxPrice" type="number" min="1" required placeholder="180"></label><label class="full-field">Delivery location<select name="location" required><option value="">Select a location</option></select></label></div><p class="form-error" id="buyerFormError" role="alert"></p><div class="dialog-actions"><button type="button" class="button button-quiet" data-close-dialog>Cancel</button><button type="submit" class="button button-primary">Save request</button></div></form></dialog>
 </body>
 </html>

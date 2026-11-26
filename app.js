@@ -542,7 +542,10 @@ import {
             harvestChart = new window.Chart(context, {
                 type: 'line',
                 data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    labels: Array.from({ length: 12 }, (_, month) => new Intl.DateTimeFormat(
+                        window.CropLinkI18n?.locale || 'en-LK',
+                        { month: 'short' }
+                    ).format(new Date(2026, month, 1))),
                     datasets: [{
                         label: 'Harvest Volume Trends (kg)',
                         data: [120, 190, 300, 250, 420, 500, 480, 390, 310, 280, 200, 150],
@@ -579,7 +582,7 @@ import {
 
         if (byId('dashboardGreeting')) byId('dashboardGreeting').textContent = greeting;
         if (byId('dashboardDate')) {
-            byId('dashboardDate').textContent = now.toLocaleDateString('en-US', {
+            byId('dashboardDate').textContent = now.toLocaleDateString(window.CropLinkI18n?.locale || 'en-LK', {
                 weekday: 'long',
                 month: 'long',
                 day: 'numeric',
@@ -1538,6 +1541,7 @@ import {
         renderRouteMap(matches);
         if (byId('routeMapMatchSelect') && matches.length) loadOnlineDistanceTable();
     }
+    window.addEventListener('croplink:languagechange', render);
 
     updateProfileRole(localStorage.getItem('croplink-login-role') || 'Coordinator');
     fillLocationSelects();
