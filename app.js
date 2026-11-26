@@ -1207,6 +1207,10 @@ import {
         document.querySelectorAll('.profile-menu-role').forEach(element => {
             element.textContent = safeRole;
         });
+        const addFarmerButton = byId('addFarmerButton');
+        if (addFarmerButton) addFarmerButton.hidden = safeRole === 'Buyer';
+        const addBuyerButton = byId('addBuyerButton');
+        if (addBuyerButton) addBuyerButton.hidden = safeRole === 'Farmer';
     }
 
     function getEffectiveTheme() {
