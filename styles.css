@@ -248,6 +248,16 @@ tbody tr:hover { background: #fbfdfc; }
 .route-item-summary-grid span { color: #718078; font-size: 10px; }
 .route-item-summary-grid strong { color: #20392e; font-size: 12px; }
 .route-item-summary-note { margin: 9px 0 0; color: #718078; font-size: 10px; }
+#recommendedMatchesPanel[hidden] { display: none; }
+.match-details-trigger { display: grid; gap: 4px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.match-details-trigger:focus-visible { outline: 2px solid #168d60; outline-offset: 3px; }
+.match-details-label { margin-left: 35px; color: #718078; font-size: 9px; }
+.recommended-match-dialog { width: min(720px, calc(100vw - 28px)); }
+.match-details-grid .match-route { grid-column: 1 / -1; }
+.match-route strong { overflow-wrap: anywhere; }
+.match-score-breakdown { margin-top: 16px; }
+.match-score-breakdown h3 { margin: 0 0 9px; color: #40544a; font-size: 13px; }
+.match-details-note { margin-top: 12px; }
 
 @media (max-width: 1100px) {
     .sidebar { width: 220px; }

@@ -531,7 +531,7 @@ import {
 
         const table = byId('dashboardMatches');
         if (table) {
-            table.innerHTML = matches.slice(0, 4).map(match => `<tr><td>${personCell(match.farmer.name, getLocationName(match.farmer.location))}</td><td><span class="crop-tag">${escapeHtml(match.farmer.product)}</span></td><td>${personCell(match.buyer.name, getLocationName(match.buyer.location), true)}</td><td>${formatNumber(Math.min(match.farmer.quantity, match.buyer.quantity))} kg</td><td>${Math.round(match.distance)} km</td><td>${scoreCell(match.score)}</td></tr>`).join('');
+            table.innerHTML = matches.slice(0, 4).map(match => `<tr><td><button class="match-details-trigger" type="button" data-farmer-id="${escapeHtml(match.farmer.id)}" data-buyer-id="${escapeHtml(match.buyer.id)}" aria-label="View details for ${escapeHtml(match.farmer.name)} and ${escapeHtml(match.buyer.name)}">${personCell(match.farmer.name, getLocationName(match.farmer.location))}<span class="match-details-label">View details</span></button></td><td><span class="crop-tag">${escapeHtml(match.farmer.product)}</span></td><td>${personCell(match.buyer.name, getLocationName(match.buyer.location), true)}</td><td>${formatNumber(Math.min(match.farmer.quantity, match.buyer.quantity))} kg</td><td>${Math.round(match.distance)} km</td><td>${scoreCell(match.score)}</td></tr>`).join('');
             if (!matches.length) table.innerHTML = '<tr><td colspan="6" class="empty-state">No eligible matches. Add compatible supply or demand.</td></tr>';
         }
 
@@ -622,6 +622,54 @@ import {
         if (byId('buyersAveragePrice')) byId('buyersAveragePrice').textContent = formatNumber(averagePrice);
     }
 
+    function showRecommendedMatchDetails(match) {
+        const dialog = byId('recommendedMatchDialog');
+        const content = byId('recommendedMatchContent');
+        if (!dialog || !content) {
+            console.error('Unable to show recommended match details: the dialog is missing.');
+            showFirebaseNotice('Recommended match details are unavailable. Reload the page and try again.');
+            return;
+        }
+
+        const { farmer, buyer } = match;
+        const matchedQuantity = Math.min(Number(farmer.quantity), Number(buyer.quantity));
+        const farmerTotal = matchedQuantity * Number(farmer.price);
+        const buyerMaximumTotal = matchedQuantity * Number(buyer.maxPrice);
+        const distanceFit = Math.max(0, 100 * (1 - match.distance / 500));
+        const route = Array.isArray(match.route) && match.route.length
+            ? match.route.map(location => `<span>${escapeHtml(getLocationName(location))}</span>`).join(' → ')
+            : `<span>${escapeHtml(getLocationName(farmer.location))}</span> → <span>${escapeHtml(getLocationName(buyer.location))}</span>`;
+
+        content.innerHTML = `
+            <div class="route-item-summary-grid match-details-grid">
+                <div><span>Farmer</span><strong>${escapeHtml(farmer.name)}</strong></div>
+                <div><span>Farmer location</span><strong>${escapeHtml(getLocationName(farmer.location))}</strong></div>
+                <div><span>Product</span><strong>${escapeHtml(farmer.product)}</strong></div>
+                <div><span>Available quantity (kg)</span><strong>${formatNumber(farmer.quantity)}</strong></div>
+                <div><span>Farmer price</span><strong>${formatMoney(farmer.price)} / kg</strong></div>
+                <div><span>Buyer</span><strong>${escapeHtml(buyer.name)}</strong></div>
+                <div><span>Buyer location</span><strong>${escapeHtml(getLocationName(buyer.location))}</strong></div>
+                <div><span>Quantity needed (kg)</span><strong>${formatNumber(buyer.quantity)}</strong></div>
+                <div><span>Buyer maximum price</span><strong>${formatMoney(buyer.maxPrice)} / kg</strong></div>
+                <div><span>Matched quantity</span><strong>${formatNumber(matchedQuantity)} kg</strong></div>
+                <div><span>Distance</span><strong>${Math.round(match.distance)} km</strong></div>
+                <div class="match-route"><span>Route</span><strong>${route}</strong></div>
+                <div><span>Estimated total cost</span><strong>${formatMoney(farmerTotal)}</strong></div>
+                <div><span>Buyer maximum total</span><strong>${formatMoney(buyerMaximumTotal)}</strong></div>
+                <div><span>Potential savings</span><strong>${formatMoney(buyerMaximumTotal - farmerTotal)}</strong></div>
+                <div><span>Suitability score</span><strong>${Math.round(match.score)}%</strong></div>
+            </div>
+            <section class="match-score-breakdown">
+                <h3>How we rank matches</h3>
+                <div class="route-item-summary-grid">
+                    <div><span>Price fit (35%)</span><strong>${Math.round(match.priceFit)}%</strong></div>
+                    <div><span>Distance fit (45%)</span><strong>${Math.round(distanceFit)}%</strong></div>
+                    <div><span>Supply coverage (20%)</span><strong>${Math.round(match.supplyCoverage)}%</strong></div>
+                </div>
+            </section>
+            <p class="route-item-summary-note match-details-note">Suggestions only; these are not confirmed sales.</p>`;
+        dialog.showModal();
+    }
     function renderMatches(matches) {
         const search = (byId('matchSearch')?.value || '').trim().toLowerCase();
         const filtered = matches.filter(match => `${match.farmer.name} ${match.buyer.name} ${match.farmer.product}`.toLowerCase().includes(search));
@@ -1207,6 +1255,8 @@ import {
         document.querySelectorAll('.profile-menu-role').forEach(element => {
             element.textContent = safeRole;
         });
+        const recommendedMatchesPanel = byId('recommendedMatchesPanel');
+        if (recommendedMatchesPanel) recommendedMatchesPanel.hidden = safeRole !== 'Coordinator';
         const addFarmerButton = byId('addFarmerButton');
         if (addFarmerButton) addFarmerButton.hidden = safeRole === 'Buyer';
         const addBuyerButton = byId('addBuyerButton');
@@ -1477,6 +1527,22 @@ import {
         byId('farmerSearch')?.addEventListener('input', renderFarmers);
         byId('buyerSearch')?.addEventListener('input', renderBuyers);
         byId('matchSearch')?.addEventListener('input', () => renderMatches(getMatches()));
+        byId('dashboardMatches')?.addEventListener('click', event => {
+            const button = event.target instanceof Element
+                ? event.target.closest('.match-details-trigger')
+                : null;
+            if (!(button instanceof HTMLButtonElement)) return;
+
+            const match = getMatches().find(item =>
+                item.farmer.id === button.dataset.farmerId
+                && item.buyer.id === button.dataset.buyerId
+            );
+            if (!match) {
+                showFirebaseNotice('That recommendation has changed. Refresh the dashboard and try again.');
+                return;
+            }
+            showRecommendedMatchDetails(match);
+        });
 
         byId('addFarmerButton')?.addEventListener('click', () => byId('farmerDialog').showModal());
         byId('addBuyerButton')?.addEventListener('click', () => byId('buyerDialog').showModal());
