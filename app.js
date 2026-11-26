@@ -402,7 +402,8 @@ import {
         for (const farmer of data.farmers) {
             for (const buyer of data.buyers) {
                 if (Number(farmer.quantity) <= 0 || Number(buyer.quantity) <= 0
-                    || farmer.product !== buyer.product || farmer.price > buyer.maxPrice) continue;
+                    || normalizeFarmerValue(farmer.product) !== normalizeFarmerValue(buyer.product)
+                    || farmer.price > buyer.maxPrice) continue;
                 const routeData = dijkstraRoute(farmer.location, buyer.location);
                 const distance = distanceBetween(farmer.location, buyer.location);
                 const priceFit = 100 - 50 * (farmer.price / buyer.maxPrice);
@@ -1109,9 +1110,13 @@ import {
     async function addRecord(type, form) {
         const formData = new FormData(form);
         const errorElement = byId(`${type}FormError`);
+        const selectedProduct = String(formData.get('product') || '').trim();
+        const product = selectedProduct === 'Other'
+            ? String(formData.get('customProduct') || '').trim().replace(/\s+/g, ' ')
+            : selectedProduct;
         const record = {
             name: String(formData.get('name')).trim(),
-            product: String(formData.get('product')),
+            product,
             quantity: Number(formData.get('quantity')),
             location: String(formData.get('location'))
         };
@@ -1143,6 +1148,7 @@ import {
             }
             errorElement.textContent = '';
             form.reset();
+            updateCustomProductInput(form);
             form.closest('dialog').close();
         } catch (error) {
             console.error(`Unable to save ${type} record:`, error);
@@ -1259,8 +1265,22 @@ import {
         if (recommendedMatchesPanel) recommendedMatchesPanel.hidden = safeRole !== 'Coordinator';
         const addFarmerButton = byId('addFarmerButton');
         if (addFarmerButton) addFarmerButton.hidden = safeRole === 'Buyer';
+        const farmerRoleNotice = byId('farmerRoleNotice');
+        if (farmerRoleNotice) farmerRoleNotice.hidden = safeRole !== 'Buyer';
         const addBuyerButton = byId('addBuyerButton');
         if (addBuyerButton) addBuyerButton.hidden = safeRole === 'Farmer';
+    }
+
+    function updateCustomProductInput(form) {
+        const productSelect = form.querySelector('select[name="product"]');
+        const customProductInput = form.querySelector('input[name="customProduct"]');
+        if (!productSelect || !customProductInput) return;
+
+        const isCustomProduct = productSelect.value === 'Other';
+        customProductInput.hidden = !isCustomProduct;
+        customProductInput.disabled = !isCustomProduct;
+        customProductInput.required = isCustomProduct;
+        if (!isCustomProduct) customProductInput.value = '';
     }
 
     function getEffectiveTheme() {
@@ -1524,6 +1544,12 @@ import {
     }
 
     function bindEvents() {
+        document.querySelectorAll('select[name="product"]').forEach(select => {
+            const form = select.form;
+            if (!form) return;
+            select.addEventListener('change', () => updateCustomProductInput(form));
+            updateCustomProductInput(form);
+        });
         byId('farmerSearch')?.addEventListener('input', renderFarmers);
         byId('buyerSearch')?.addEventListener('input', renderBuyers);
         byId('matchSearch')?.addEventListener('input', () => renderMatches(getMatches()));
