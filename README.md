@@ -56,7 +56,7 @@ Never put Firebase Admin credentials, service-account keys, or other private sec
 
 ## OpenAI assistant setup
 
-The CropLink Assistant sends questions to OpenAI through a Firebase Cloud Function. It requires a signed-in Firebase user, only receives the conversation (not farmer or buyer records), and allows up to 30 requests per Firebase user per UTC day. The OpenAI API key stays in Firebase Secret Manager and must never be added to `app.js` or `firebase-config.js`.
+The CropLink AI Chatbot answers CropLink questions and general questions through OpenAI and a Firebase Cloud Function. Users can ask in Sinhala, English, or Singlish, and the chatbot is instructed to reply in the same language and style. It requires a signed-in Firebase user, only receives the conversation (not farmer or buyer records), and allows up to 30 requests per Firebase user per UTC day. The OpenAI API key stays in Firebase Secret Manager and must never be added to `app.js` or `firebase-config.js`.
 
 1. Enable billing for the Firebase project (Cloud Functions may require the Blaze plan) and make sure the project has a Firestore database.
 2. Create an OpenAI API key and enable billing or usage for the OpenAI API. Set an OpenAI spending limit.

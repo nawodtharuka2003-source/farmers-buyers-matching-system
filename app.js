@@ -1628,10 +1628,10 @@ function setupSupportAgent() {
     panel.className = 'support-agent';
     panel.setAttribute('aria-label', 'CropLink support assistant');
     panel.innerHTML = `
-        <header class="support-agent-header"><div><span class="support-agent-status"></span><strong>CropLink Assistant</strong><small>Here to help</small></div><button type="button" class="support-agent-close" aria-label="Close assistant">Close</button></header>
-        <div class="support-agent-messages" aria-live="polite"><div class="support-message agent"><span>Hi! I can help you use CropLink. What would you like to know?</span></div></div>
+        <header class="support-agent-header"><div><span class="support-agent-status"></span><strong>CropLink AI Chatbot</strong><small>Ask in Sinhala, English, or Singlish</small></div><button type="button" class="support-agent-close" aria-label="Close assistant">Close</button></header>
+        <div class="support-agent-messages" aria-live="polite"><div class="support-message agent"><span>Hi! Ask me anything in Sinhala, English, or Singlish. I can help with CropLink and other questions.</span></div></div>
         <div class="support-suggestions"><button type="button">How do I add a farmer?</button><button type="button">How are matches calculated?</button></div>
-        <form class="support-agent-form"><input name="message" type="text" autocomplete="off" placeholder="Ask a question..." aria-label="Ask a question" required><button type="submit" aria-label="Send message">Send</button></form>`;
+        <form class="support-agent-form"><input name="message" type="text" autocomplete="off" placeholder="Ask anything..." aria-label="Ask anything in Sinhala, English, or Singlish" required><button type="submit" aria-label="Send message">Send</button></form>`;
     document.body.append(panel);
     const launcher = document.createElement('button');
     launcher.className = 'support-agent-launcher';
